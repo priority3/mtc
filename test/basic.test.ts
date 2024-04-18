@@ -22,7 +22,7 @@ it("basic lex", () => {
 it('equal lex', () => {
   const s = readFileSync(getResolveFile('./files/equals.ts'), 'utf-8')
   const tokens = lexAll(s)
-  // expect(tokens.length).equal(28)
+  expect(tokens.length).equal(28)
   expect(tokens).toStrictEqual([
     { text: `let`, token: Token.LetKeyword },
     { text: `b`, token: Token.Identifier },

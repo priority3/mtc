@@ -34,6 +34,7 @@ export function lexAll(s: string) {
     lexer.scan()
     const token = lexer.token()
     const text = lexer.text()
+
     switch (token) {
       case Token.EOF:
         return tokens
@@ -66,11 +67,38 @@ export function lex(s: string): Lexer {
       token = Token.EOF
       return
     }
+
     const start = pos
+
+    if (/[0-9]/.test(s.charAt(pos))) {
+      scanForward(c => /[0-9]/.test(c))
+      text = s.slice(start, pos)
+      token = Token.Literal
+    }
+    else if (/[_a-zA-Z]/.test(s.charAt(pos))) {
+      scanForward(c => /[_a-zA-Z0-9]/.test(c))
+      text = s.slice(start, pos)
+      token = text in keywords ? keywords[text as keyof typeof keywords] : Token.Identifier
+    } else if (/[!=]/.test(s.charAt(pos))) {
+      equalsTokenize()
+    } else {
+      switch (s.charAt(pos)) {
+        case ';':
+          text = s.charAt(pos)
+          token = Token.Semicolon
+      }
+      pos++
+    }
+  }
+  function scanForward(pred: (s: string) => boolean) {
+    while (pos < s.length && pred(s.charAt(pos))) pos++
+  }
+  function equalsTokenize() {
     if (state === TokenState.finish) {
       text = tempBuffer
       tempBuffer = ''
       state = TokenState.start
+      return
     }
     // Finite-State Machine
     switch (state) {
@@ -80,7 +108,7 @@ export function lex(s: string): Lexer {
           tempBuffer += s.charAt(pos)
           pos++
           // do next state change
-          scan()
+          equalsTokenize()
           return
         } else {
           // do other token judge 
@@ -92,10 +120,8 @@ export function lex(s: string): Lexer {
       case TokenState.neEquals:
         if (s.charAt(pos) === '=') {
           if (state === TokenState.assign) {
-            token = Token.EqualsEqualsToken
             state = TokenState.equals
           } else if (state === TokenState.not) {
-            token = Token.ExclamationEqualsToken
             state = TokenState.neEquals
           } else if (state === TokenState.equals) {
             token = Token.EqualsEqualsEqualsToken
@@ -124,28 +150,8 @@ export function lex(s: string): Lexer {
           state = TokenState.finish
         }
         pos++
-        scan()
+        equalsTokenize()
         return
     }
-    if (/[0-9]/.test(s.charAt(pos))) {
-      scanForward(c => /[0-9]/.test(c))
-      text = s.slice(start, pos)
-      token = Token.Literal
-    }
-    else if (/[_a-zA-Z]/.test(s.charAt(pos))) {
-      scanForward(c => /[_a-zA-Z0-9]/.test(c))
-      text = s.slice(start, pos)
-      token = text in keywords ? keywords[text as keyof typeof keywords] : Token.Identifier
-    } else {
-      switch (s.charAt(pos)) {
-        case ';':
-          text = s.charAt(pos)
-          token = Token.Semicolon
-      }
-      pos++
-    }
-  }
-  function scanForward(pred: (s: string) => boolean) {
-    while (pos < s.length && pred(s.charAt(pos))) pos++
   }
 }
