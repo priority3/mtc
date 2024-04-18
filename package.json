@@ -2,6 +2,7 @@
   "name": "mini-typescript",
   "version": "1.0.0",
   "description": "mini typescript compiler",
+  "packageManager": "pnpm@8.14.2",
   "scripts": {
     "test": "vitest"
   },
