@@ -69,6 +69,7 @@ export function lex(s: string): Lexer {
     const start = pos
     if (state === TokenState.finish) {
       text = tempBuffer
+      tempBuffer = ''
       state = TokenState.start
     }
     // Finite-State Machine
@@ -76,10 +77,13 @@ export function lex(s: string): Lexer {
       case TokenState.start:
         if (s.charAt(pos) === '=' || s.charAt(pos) === '!') {
           state = s.charAt(pos) === '=' ? TokenState.assign : TokenState.not
+          tempBuffer += s.charAt(pos)
+          pos++
           // do next state change
           scan()
+          return
         } else {
-          // do other token judge
+          // do other token judge 
           break
         }
       case TokenState.assign:
@@ -89,22 +93,39 @@ export function lex(s: string): Lexer {
         if (s.charAt(pos) === '=') {
           if (state === TokenState.assign) {
             token = Token.EqualsEqualsToken
+            state = TokenState.equals
           } else if (state === TokenState.not) {
-            token = Token.ExclamationEqualsEqualsToken
+            token = Token.ExclamationEqualsToken
+            state = TokenState.neEquals
           } else if (state === TokenState.equals) {
             token = Token.EqualsEqualsEqualsToken
+            state = TokenState.finish
           } else if (state === TokenState.neEquals) {
+            token = Token.ExclamationEqualsEqualsToken
+            state = TokenState.finish
+          }
+          tempBuffer += s.charAt(pos)
+        } else {
+          // =
+          if (state === TokenState.assign) {
+            token = Token.EqualsToken
+          }
+          // error
+          if (state === TokenState.not) {
+          }
+          // ==
+          if (state === TokenState.equals) {
+            token = Token.EqualsEqualsToken
+          }
+          // !=
+          if (state === TokenState.neEquals) {
             token = Token.ExclamationEqualsToken
           }
-          state = TokenState.start
-          pos++
-          text = s.slice(start, pos)
-          return
-        } else {
-          token = Token.EqualsToken
-          text = '='
-          return
+          state = TokenState.finish
         }
+        pos++
+        scan()
+        return
     }
     if (/[0-9]/.test(s.charAt(pos))) {
       scanForward(c => /[0-9]/.test(c))
